@@ -1,4 +1,261 @@
-> WildCard [Limited] Scop Targets:
+# **WildCard [Limited] Scop Targets:**
 
-collect the subdomains that's have a wildcard from https://crt.sh/ and put them in txt file, then run this command 
+collect the subdomains that's have a wildcard from https://crt.sh/ and put them in txt file, then run this command
 
+- `subfinder -dL wildcard_subdomains_Form_crt.txt -all -recursive -o subfinder.txt`
+- `subfinder -d domain.com | alterx | dnsx -o subfinder1.txt`
+
+- `bbot -t evilcorp.com fiscloudservices.com -p subdomain-enum code-enum email-enum spider web-basic --allow-deadly -o bbot.xt`
+- `subfinder -d target.com -all -recursive -o subfinder2.txt`
+
+- `### get the ASN 
+1- > dig +short Microsoft.com  => this will get the ips for Microsoft.com
+2- > whois -h whois.cymru.com " -v ip" => this will get the ASN number for Microsoft
+3- > asnmap -a ASnmber -o asnip.txt
+4- cat asnip.txt | httpx 
+
+### To Get subdomains using IP range or ASN => you can collect the ASNs from here bgp.he.net  and put them in one file and run this command, 
+> prips {ASN IP RANGE} | hakrevdns
+> prips 173.0.84.0/24 | hakrevdns
+> prips 173.0.84.0/24 | hakip2host`
+
+- `echo "target.com" | subdog --parallel --output domain_subs`
+- `sublist3r -d <target.com> -o sublist3r_domains.txt`
+- `assetfinder --subs-only example.com > assetfinder.txt`
+- `amass enum -passive -d targert.com -o amass.txt`
+- `subfinder -d target.com -silent | httpx -favicon`
+
+# **Online Services:**
+
+`curl -s 'https://subdomainfinder.c99.nl/scans/2025-12-29/target.com' \
+	  | grep -Eo '([A-Za-z0-9_-]+\.)+target\.com' \
+	  | sort -u \
+	  | tee c99.txt`
+
+`curl -s "http://web.archive.org/cdx/search/cdx?url=*.target.com/*&output=text&fl=original&collapse=urlkey" \
+  | sort \
+  | sed -E 's|http?://([^/]+).*|\1|' \
+  | sort -u \
+  | tee wayback.txt`
+
+`curl -s "https://crt.sh/?q=%25.target.com&output=json" \
+  | jq -r '.[]?.name_value' \
+  | sed 's/\*\.//g' \
+  | sort -u \
+  | tee crtsh_subs.txt`
+
+`curl -s -H "APIKEY: <VLAUE>" -H "Accept: application/json" \
+  "https://api.securitytrails.com/v1/domain/target.com/subdomains?limit=50000" \
+  | jq -r '.subdomains // [] | .[] | "\(.).target.com.com"' \
+  | sort -u \
+  | tee securitytrails.txt`
+
+`https://securitytrails.com/domain/target.com/dns`
+
+`https://app.netlas.io/domains/?q=domain%3A*.target.com&page=1&indices=`
+
+`https://api.certspotter.com/v1/issuances?domain=target.com&include_subdomains=true&expand=dns_names`
+
+`https://otx.alienvault.com/api/v1/indicators/domain/target.com/passive_dns`
+
+`https://api.hackertarget.com/hostsearch/?q=target.com`
+
+`https://anubisdb.com/anubis/subdomains/target.com`
+
+`https://sub-scan-api.reverseipdomain.com/?domain=target.com`
+
+`https://api.subdomain.center/?domain=target.com`
+
+`https://api.subdomain.center/?domain=target.com`
+
+`https://urlscan.io/api/v1/search/?q=domain:target.com`
+
+`https://virustotal.com/vtapi/v2/domain/report?apikey=value&domain=target.com`
+
+# **Collect the Ip's**
+
+get the subdomains with ips
+
+`subfinder -d Microsoft.com -all -recursive | dnsx -a -resp | tee subdomains_With_Ips.txt`
+
+`curl -s 'https://subdomainfinder.c99.nl/scans/2025-12-29/target.com' \
+  | grep -Eo '([0-9]{1,3}\.){3}[0-9]{1,3}' \
+  | sort -u \
+  | tee c99_ips.txt`
+
+`https://virustotal.com/vtapi/v2/domain/report?apikey=value&domain=target.com`
+
+- shodan ⇒ by using the bookmark
+- netles
+
+**Scan IPs**
+
+```
+naabu -list ip.txt -c 50 -nmap-cli 'nmap -sV -SC' -o naabu-full.txt
+```
+
+```
+naabu -l ip.txt -top-ports 1000 -o port.txt
+```
+
+```
+masscan --readscan temp | awk '{print $NF":"$4}' | cut -d/ -f1 > open-ports.txt
+```
+
+```
+masscan -p0-79,81-442,444-65535 -iL live-ips.txt --rate=10000 -oB temp
+```
+
+```
+naabu -rate 10000 -host cvo-abrn-stg.sys.comcast.net -silent
+```
+
+# **VHOST enumeration**
+
+**Send invalid Host header for each IP & record response**
+
+```
+while read ip; do  curl -s -o /tmp/r1 -w "%{http_code} %{size_download}\n" -H "Host: invalid.domain" http://$ip >> baseline.txtdone < ips.txtx
+```
+
+**Try each subdomain as Host header & compare**
+
+```
+while read ip; do  while read host; do    curl -s -o /tmp/r2 -w "$ip $host %{http_code} %{size_download}\n" -H "Host: $host" http://$ip >> vhosts_raw.txt  done < domains.txtdone < ips.txt
+```
+
+**Find differences (content-length deviation ±20%)**
+
+```
+awk 'NR==FNR { base[$1]=$2; next }{  ip=$1; host=$2; code=$3; size=$4;  diff = size - base[ip];  if (diff < 0) diff = -diff;  if (diff > (base[ip] * 0.20)) print $0}' baseline.txt vhosts_raw.txt > potential_vhosts.txt
+```
+
+**Final: Add to /etc/hosts => example**
+
+```
+sudo sh -c 'cat potential_vhosts.txt | awk "{print \$1, \$2}" >> /etc/hosts'
+```
+
+---
+
+**Anther method:**
+
+Get the live IP >> send it your intruder tab >> the host header in the request
+we will mark it to FUZZ and the target value will be for the IP and click off the host
+header update option.
+
+---
+
+1- copy all IP ranges
+
+```
+cat iplist | cut -f1
+```
+
+2- Send to prips
+
+```
+for i in $(cat iplist | cut -f1); do prips $i >> fb; done
+```
+
+```
+wc -l fb
+```
+
+```
+head -n 10 fb
+```
+
+3 - Gather all subdomains you can find for the org, even the ones not resolving
+
+```
+cat fbsubs | awk -F' ' '{print $2}' | sort -u
+```
+
+4 - BruteForce : IPS:SUBDOMAINS
+
+```
+for i in $(cat fbips);do ffuf -w fbsubs -u https://$i -H "Host: FUZZ" -of csv -o $il.csv ; done
+```
+
+# **Brute Force:**
+
+```
+gobuster dns --domain target.com -w ~/payloads/2m-subdomains.txt -o gobuster.txt
+```
+
+```
+ffuf -c -r -u 'https://www.atg.se/' -H 'Host: FUZZ.atg.se' -w dns-wordlist.txt
+```
+
+```
+cat ips.txt | dnsx -ptr -resp-only
+```
+
+```
+python3 ~/tools/subbrute/subbrute.py subdomains.txt -r ~/tools/subbrute/resolvers.txt > subbrute.txt
+```
+
+# **Get Subs by fiv icon**
+
+```
+cat subs.txt | httpx -path /favicon.ico,/favicon.png -mc 200,403 -o live-favicon.txt
+```
+
+put the URL for the fivicon URLS here [favicon-hash.kmsec.uk](https://favicon-hash.kmsec.uk/) to get the hash.
+
+visti: [shodan.com](https://www.shodan.io/), use this Dork
+
+```
+http.favicon.hash:XXX
+```
+
+Visti: [search.censys.io](https://search.censys.io/), use this Dork:
+
+```
+services.http.response.favicons.md5_hash:XXXXXXXXXXX
+```
+
+Visit: [www.zoomeye.hk](https://www.zoomeye.hk/), use this Dork:
+
+```
+iconhash:"xxxxxx"
+```
+
+# **Subdomain Takeover:**
+
+using subzy [suubzy](https://github.com/PentestPad/subzy)
+
+```
+subzy run --targets alldomains.txt => to check the subdomains takeover
+```
+
+**Filiter with HTTPX**
+
+```
+httpx -list allsubs.txt -status-code -content-length -content-type -line-count -title -body-preview -server -tech-detect -probe-all-ips -include-response -follow-host-redirects -random-agent -j httpx.json
+```
+
+# **Search Engines**
+
+shodan:
+
+```
+- ssl.cert.subject.CN:"target.com"- http.favicon.hash:<favicon_hash>- http.html:"© copyright <company>"- org:<company> ssl.cert.expired: true- org:<company> http.status:200,404 -port:80 -port:443 -port:8080 -port:8443- 
+org:<company> http.status:301,302,303- org:<company> product:jenkins
+```
+
+**Censys:**
+
+```
+- services.tls.certificate.names:"intigriti.com"- services.http.response.favicons.hashes:<favicon_hash>- services.http.response.body:"© copyright <company>"- autonomous_system.organization:"<company>" AND services.tls.certificate.parsed.validity_period.not_after: 2024-11-17- autonomous_system.organization:"<company>" AND services.http.response.html_title: {"Login", "Log in", "Register", "Signin", "Sign in", "Sign up"}- autonomous_system.organization:"<company>" AND services: (service_name: HTTP and not port: {80, 443, 8080, 8443})- autonomous_system.organization:"<company>" AND services.http.response.status_code: [300 to 399]- 
+autonomous_system.organization:"<company>" AND services.software.vendor: jenkins
+```
+
+**zoomeye**
+
+Copy
+
+```
+hostname="realestate.com.au"
+```
