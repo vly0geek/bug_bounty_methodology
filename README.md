@@ -1,7 +1,9 @@
 # bug_bounty_methodology
-hello friend
 
 
-> hlllo
+
+WildCard [Limited] Scop Targets:
+
+collect the subdomains that's have a wildcard from https://crt.sh/ and put them in txt file, then run this command 
 
 
